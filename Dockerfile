@@ -1,7 +1,6 @@
-# Base Python image
 FROM python:3.11-slim
 
-# Set working directory
+# Set workdir
 WORKDIR /app
 
 # Install system dependencies
@@ -11,23 +10,23 @@ RUN apt-get update && apt-get install -y \
     gettext \
     && rm -rf /var/lib/apt/lists/*
 
-# Install pipenv (or pip-tools, depending on your Saleor fork)
-RUN pip install --no-cache-dir pipenv
+# Install Poetry
+RUN pip install --no-cache-dir poetry
 
 # Copy dependency files
-COPY Pipfile Pipfile.lock ./
+COPY pyproject.toml poetry.lock* ./
 
-# Install Python dependencies
-RUN pipenv install --deploy --ignore-pipfile
+# Install dependencies
+RUN poetry install --no-dev --no-interaction --no-ansi
 
 # Copy project files
 COPY . .
 
 # Collect static files
-RUN pipenv run python manage.py collectstatic --noinput
+RUN poetry run python manage.py collectstatic --noinput
 
 # Expose port
 EXPOSE 8000
 
-# Start Saleor
-CMD ["pipenv", "run", "gunicorn", "saleor.wsgi:application", "--bind", "0.0.0.0:8000"]
+# Start app
+CMD ["poetry", "run", "gunicorn", "saleor.wsgi:application", "--bind", "0.0.0.0:8000"]
